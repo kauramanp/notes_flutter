@@ -7,20 +7,16 @@ class NotesDatabase {
   static Database? _database;
   var notesTable = "notes";
 
-  // var databaseFactoryWebLocal = createDatabaseFactoryFfiWeb(
-  //     options: SqfliteFfiWebOptions(
-  //         sharedWorkerUri: Uri.parse('sw.dart.js'),
-  //         // ignore: invalid_use_of_visible_for_testing_member
-  //         forceAsBasicWorker: true));
   NotesDatabase() {
     createDatabase();
   }
 
-  Future<void> createDatabase() async {
-    var databaseFactory = databaseFactoryFfi;
+  Future<void> createDatabase() async {s
+    // var databaseFactory = databaseFactoryFfi;
     //var factory = databaseFactoryWebLocal;
 
-    _database = await openDatabase('notes.db', onCreate: (db, version) async {
+    _database = await openDatabase(getDatabasesPath().s'notes.db'),
+, onCreate: (db, version) async {
       await db.execute(
           "CREATE TABLED  $notesTable(id INTEGER PRIMARY KEY AUTO INCREMENT, title TEXT, description TEXT, createdAT TIMESTAMP)");
     }, version: 1);
