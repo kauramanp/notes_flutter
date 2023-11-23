@@ -1,7 +1,5 @@
 import 'package:notes_flutter/database/notes.dart';
 import 'package:sqflite/sqflite.dart';
-import 'package:sqflite_common_ffi/sqflite_ffi.dart';
-import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 
 class NotesDatabase {
   static Database? _database;
@@ -11,24 +9,35 @@ class NotesDatabase {
     createDatabase();
   }
 
-  Future<void> createDatabase() async {s
-    // var databaseFactory = databaseFactoryFfi;
-    //var factory = databaseFactoryWebLocal;
-
-    _database = await openDatabase(getDatabasesPath().s'notes.db'),
-, onCreate: (db, version) async {
-      await db.execute(
-          "CREATE TABLED  $notesTable(id INTEGER PRIMARY KEY AUTO INCREMENT, title TEXT, description TEXT, createdAT TIMESTAMP)");
-    }, version: 1);
+  Future<void> createDatabase() async {
+    try {
+      _database = await openDatabase('notes.db', onCreate: (db, version) async {
+        await db.execute(
+            "CREATE TABLE IF NOT EXISTS $notesTable(id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, title TEXT, description TEXT, createdAT TIMESTAMP)");
+      }, version: 1);
+    } catch (exception) {
+      print("exception $exception");
+    }
   }
 
-  insertNotes(Notes notes) async {
-    await _database?.insert(notesTable, notes.toJson(),
-        conflictAlgorithm: ConflictAlgorithm.abort);
+  Future<List<Notes>> getNotes() async {
+    print("getNotes");
+    final maps = await _database?.query(notesTable);
+    List<Notes> objectList =
+        List<Notes>.from(maps!.map((x) => Notes.fromMap(x)));
+    print("objectList ${objectList.length}");
+    return objectList;
   }
 
-  updateNotes(Notes notes) async {
-    await _database?.update(notesTable, notes.toJson(),
-        conflictAlgorithm: ConflictAlgorithm.abort);
+  Future<int> insertNotes(Notes notes) async {
+    return _database?.insert(notesTable, notes.toJson(),
+            conflictAlgorithm: ConflictAlgorithm.abort) ??
+        Future.value(-1);
+  }
+
+  Future<int> updateNotes(Notes notes) async {
+    return _database?.update(notesTable, notes.toJson(),
+            conflictAlgorithm: ConflictAlgorithm.abort) ??
+        Future.value(-1);
   }
 }

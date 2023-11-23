@@ -1,15 +1,9 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 
 import 'database/notes.dart';
 import 'database/notes_database.dart';
-import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 void main() {
-
   runApp(const MyApp());
 }
 
@@ -43,22 +37,50 @@ class _MyHomePageState extends State<MyHomePage> {
   final NotesDatabase _notesDatabase = NotesDatabase();
 
   @override
+  void initState() {
+    super.initState();
+    print("in init state");
+    getNotes();
+  }
+
+  Future<List<Notes>> getNotes() {
+    return _notesDatabase.getNotes();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(widget.title),
       ),
-      body: ListView.builder(
-        itemBuilder: (context, index) {
-          return Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [Text(list[index].title), Text(list[index].description)],
-          );
-        },
-        itemCount: list.length,
-        shrinkWrap: true,
-      ),
+      body: FutureBuilder(
+          future: getNotes(),
+          builder: ((context, AsyncSnapshot<List<Notes>> snapshot) {
+            if (snapshot.hasData) {
+              return ListView.builder(
+                itemBuilder: (context, index) {
+                  return GestureDetector(
+                    onTap: _showDialog(position: index),
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(snapshot.data?[index].title ?? ""),
+                          Text(snapshot.data?[index].description ?? "")
+                        ],
+                      ),
+                    ),
+                  );
+                },
+                itemCount: snapshot.data?.length,
+                shrinkWrap: true,
+              );
+            } else {
+              return Container();
+            }
+          })),
       floatingActionButton: FloatingActionButton(
         onPressed: _showDialog,
         tooltip: 'Increment',
@@ -108,9 +130,11 @@ class _MyHomePageState extends State<MyHomePage> {
                     position > -1
                         ? {
                             notes.createdAt = list[position].createdAt,
-                            _notesDatabase.updateNotes(notes)
+                            _notesDatabase.updateNotes(notes).then((value) =>
+                                {getNotes(), Navigator.of(context).pop()})
                           }
-                        : _notesDatabase.insertNotes(notes);
+                        : _notesDatabase.insertNotes(notes).then((value) =>
+                            {getNotes(), Navigator.of(context).pop()});
                   },
                   child: Text(position > -1 ? "Update" : "Add"))
             ],
